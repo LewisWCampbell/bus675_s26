@@ -1,10 +1,9 @@
 """
 Lab 1: Text-Based Adventure RPG
 ================================
-YOUR NAME HERE
+Lewis Campbell
 
-Build your game here! This file contains all the starter code from the lab notebook.
-Fill in the TODOs, add your own classes, and make it your own.
+MYSTIC MOUNTAIN - Fight your way from the mountain to the beach!
 
 Run with: python game.py
 """
@@ -27,32 +26,110 @@ def roll_dice(num_dice, sides):
 
 
 # =============================================================================
+# Item Classes
+# =============================================================================
+
+class Item:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
+
+    def use(self, player, location=None):
+        pass
+
+    def __str__(self):
+        return f"{self.name}: {self.description}"
+
+
+class MudPie(Item):
+    def __init__(self):
+        super().__init__("Mud Pie", "Increases Health 25+")
+
+    def use(self, player, location=None):
+        player.health = min(player.health + 25, player.max_health)
+        print(f"There's a lesson in here about taking L's...\n")
+        print(f"Health: {player.health}/{player.max_health}")
+
+
+class BusinessShield(Item):
+    def __init__(self):
+        super().__init__("Business Shield", "Forged in the basement next to the screen printing equipment")
+
+    def use(self, player, location=None):
+        player.defense = player.defense + 3
+        player.strength = player.strength + 5
+        print(f"You equip the shield of Business Expierience! Defense: {player.defense}")
+        print(f" At least {player.defense} is enough to see the sword coming, before it hits you in the face!")
+
+
+class MarketingMace(Item):
+    def __init__(self):
+        super().__init__("Marketing Mace", "Now you have their attention, what are you going to do with it?")
+
+    def use(self, player, location=None):
+        player.strength = player.strength + 5
+
+
+class HolyHandGrenade(Item):
+    def __init__(self):
+        super().__init__("Holy Hand Grenade", " Tis` but a Scratch ")
+
+    def use(self, player, location=None):
+        if location and location.enemies:
+            print(" Okay but other than the Holy Hand Grenade, what have the Romans ever done for us?")
+            for enemy in location.enemies:
+                print(f"{enemy.name} is dead. Anyway...")
+            location.enemies.clear()
+        else:
+            print("You really had a Holy Hand Grenade, and you didn't even hit anything?!")
+
+
+class CyberSword(Item):
+    def __init__(self):
+        super().__init__("Cyber Sword", "Cheatcode, Easter Egg, who's to say?")
+
+    def use(self, player, location=None):
+        player.strength = 99
+        player.health = 99
+        player.defense = 99
+
+
+class Sunglasses(Item):
+    def __init__(self):
+        super().__init__("Sunglasses", "Life is about Balance, you gotta relax")
+
+    def use(self, player, location=None):
+        print("These could help you wind down in the right location")
+
+
+# =============================================================================
 # Character Classes
 # =============================================================================
 
 class Character:
     """Base class for all characters in the game."""
 
-    def __init__(self, name, health, strength, defense):
-        # TODO: Initialize attributes
-        pass
+    def __init__(self, name, health, strength, defense, max_health):
+        self.name = name
+        self.health = health
+        self.strength = strength
+        self.defense = defense
+        self.max_health = max_health
 
     def is_alive(self):
-        # TODO: Return True if health > 0
-        pass
+        return self.health > 0
 
     def take_damage(self, amount):
-        # TODO: Reduce health, but don't go below 0
-        # Print a message about the damage taken
-        pass
+        self.health = self.health - amount
+        print(f'{self.name}-alot took {amount} damage, health now: {self.health}')
 
     def attack(self, target):
-        # TODO: Implement d20 combat
-        # 1. Roll d20, add strength
-        # 2. Compare to target's defense
-        # 3. If hit, deal damage to target
-        # 4. Print combat messages!
-        pass
+        this_roll = roll_d20()
+        if this_roll > target.defense:
+            target.take_damage(self.strength)
+            print("Huzzah")
+        else:
+            print(f"{self.name}-alot's attack missed!")
 
     def __str__(self):
         return f"{self.name} (HP: {self.health}/{self.max_health})"
@@ -62,33 +139,98 @@ class Player(Character):
     """The player character."""
 
     def __init__(self, name):
-        # TODO: Call parent __init__ with appropriate starting stats
-        # TODO: Initialize inventory as empty list
-        pass
+        super().__init__(name, health=100, strength=5, defense=5, max_health=100)
+        self.mana = 0
+        self.inventory = []
 
     def pick_up(self, item):
-        # TODO: Add item to inventory
-        pass
+        self.inventory.append(item)
+        print(f"Picked up: {item.name}")
 
     def show_inventory(self):
-        # TODO: Display all items in inventory
-        pass
+        if not self.inventory:
+            print("Your inventory is empty.")
+        else:
+            for item in self.inventory:
+                print(item)
+
+    def use_item(self, item_name, location=None):
+        for item in self.inventory:
+            if item.name.lower() == item_name.lower():
+                item.use(self, location)
+                self.inventory.remove(item)
+                return
+        print(f"You don't have a {item_name}.")
 
 
 class Enemy(Character):
     """Base class for enemies."""
 
-    def __init__(self, name, health, strength, defense, xp_value=10):
-        # TODO: Call parent __init__
-        # TODO: Set xp_value
-        pass
+    def __init__(self, name, health=30, strength=2, defense=3, xp_value=10):
+        super().__init__(name, health=health, strength=strength, defense=defense, max_health=health)
+        self.xp_value = xp_value
 
 
-# TODO: Create specific enemy types (Minion, Elite, Boss)
-# Example:
-# class Goblin(Enemy):
-#     def __init__(self):
-#         super().__init__("Goblin", health=15, strength=3, defense=8, xp_value=5)
+class Giant(Enemy):
+    def __init__(self):
+        super().__init__("Mini_Math_Master", health=15, strength=5, defense=2, xp_value=50)
+        self.loot = MudPie()
+        self.ascii_art = r"""
+       O
+      /|\
+     / | \
+    /  |  \
+   /   |   \
+   --0-0---
+   |      |
+   |      |
+   |______|
+        """
+
+
+class Goblin(Enemy):
+    def __init__(self):
+        super().__init__("MR_BRATWORST", health=5, strength=3, defense=5, xp_value=20)
+        self.loot = MarketingMace()
+        self.ascii_art = r"""
+      /\
+     /  \
+    / >< \
+   |0 __ 0|
+   | |  | |
+   | |  | |
+   [======]
+        """
+
+
+class Zombie(Enemy):
+    def __init__(self):
+        super().__init__("Zombie", health=3, strength=2, defense=2, xp_value=5)
+        self.loot = BusinessShield()
+        self.ascii_art = r"""
+     _____
+    /     \
+   |-@---@-|
+   |  ___  |
+   |______/
+   /|   |\
+  / |   | \
+        """
+
+
+class Ferret(Enemy):
+    def __init__(self):
+        super().__init__('Ferret with a Warrent', health=5, strength=10, defense=2, xp_value=1000)
+        self.loot = HolyHandGrenade()
+        self.ascii_art = r"""
+    /\___/\
+   (  o o  )
+   (  =^=  )
+    )     (
+   (       )
+  ( /\   /\ )
+   ""   ""
+        """
 
 
 # =============================================================================
@@ -101,20 +243,24 @@ class Location:
     def __init__(self, name, description):
         self.name = name
         self.description = description
-        self.connections = {}  # {"north": Location, "south": Location, etc.}
-        self.enemies = []      # List of enemies in this location
-        self.items = []        # List of items in this location
+        self.connections = {}
+        self.enemies = []
+        self.items = []
 
     def describe(self):
         """Print a full description of the location."""
         print(f"\n{'='*50}")
-        print(f"📍 {self.name}")
+        print(f"  {self.name}")
         print(f"{'='*50}")
         print(self.description)
-
-        # TODO: Show enemies if present
-        # TODO: Show items if present
-        # TODO: Show available exits
+        if self.enemies:
+            print(f"\nENEMIES:")
+            for enemy in self.enemies:
+                print(f"  - {enemy.name}")
+        print(f"\nEXITS:")
+        for direction, location in self.connections.items():
+            print(f"  {direction} -> {location.name}")
+        print(f"{'='*50}")
 
     def get_exits(self):
         """Return a list of available directions."""
@@ -132,26 +278,64 @@ class Location:
 def create_world():
     """Create and connect all locations. Returns the starting location."""
 
-    # Create locations
-    # village = Location(
-    #     "The Village",
-    #     "A peaceful village with thatched-roof cottages. Smoke rises from chimneys."
-    # )
+    The_Mountain = Location(
+        "The Mountain",
+        "A foggy mountain filled with Wonder, Horrors, and your greatest imagination"
+    )
 
-    # TODO: Create more locations (4-6 total)
+    The_Arena = Location(
+        "The Arena",
+        "A monument to competition, Graveyard to many, Glory to the Lucky"
+    )
 
-    # Connect locations (remember to connect both ways!)
-    # village.add_connection("north", castle)
-    # castle.add_connection("south", village)
+    The_Cyber_Cellar = Location(
+        "CYBER CELLAR",
+        "A pathway to untold riches, but at what cost?"
+    )
 
-    # TODO: Add enemies to locations
-    # dungeon.enemies.append(Goblin())
+    Zombie_College = Location(
+        "Zombie College",
+        "It's unclear if they ate all the brains... or if there were any here to begin with"
+    )
 
-    # TODO: Add items to locations (optional)
+    The_Beach = Location(
+        "The Beach",
+        "Well... That's it, doesn't get much better. Maybe the Joke is this is the end..."
+    )
 
-    # Return the starting location
-    # return village
-    pass
+    # Connect locations (both ways)
+    The_Mountain.add_connection("east", The_Arena)
+    The_Arena.add_connection("west", The_Mountain)
+
+    The_Mountain.add_connection("west", Zombie_College)
+    Zombie_College.add_connection("east", The_Mountain)
+
+    The_Arena.add_connection("below", The_Cyber_Cellar)
+    The_Cyber_Cellar.add_connection("above", The_Arena)
+
+    The_Cyber_Cellar.add_connection("east", The_Beach)
+    The_Beach.add_connection("west", The_Cyber_Cellar)
+
+    Zombie_College.add_connection("west", The_Beach)
+    The_Beach.add_connection("east", Zombie_College)
+
+    # Add enemies
+    Zombie_College.enemies.append(Zombie())
+    Zombie_College.enemies.append(Zombie())
+    Zombie_College.enemies.append(Zombie())
+    Zombie_College.enemies.append(Zombie())
+    Zombie_College.enemies.append(Zombie())
+
+    The_Arena.enemies.append(Giant())
+    The_Arena.enemies.append(Giant())
+    The_Arena.enemies.append(Goblin())
+
+    The_Cyber_Cellar.enemies.append(Ferret())
+
+    # Hidden Easter Egg
+    The_Mountain.items.append(CyberSword())
+
+    return The_Mountain
 
 
 # =============================================================================
@@ -161,7 +345,6 @@ def create_world():
 class Combat:
     """Manages turn-based combat between player and enemy."""
 
-    # Combat states
     PLAYER_TURN = "player_turn"
     ENEMY_TURN = "enemy_turn"
     COMBAT_END = "combat_end"
@@ -176,14 +359,16 @@ class Combat:
         """Begin combat and run until someone wins/loses/flees."""
         print(f"\n⚔️ COMBAT BEGINS! ⚔️")
         print(f"{self.player.name} vs {self.enemy.name}!")
+        if hasattr(self.enemy, 'ascii_art'):
+            print(self.enemy.ascii_art)
 
         while self.state != Combat.COMBAT_END:
             if self.state == Combat.PLAYER_TURN:
                 self.player_turn()
             elif self.state == Combat.ENEMY_TURN:
                 self.enemy_turn()
-
         return self.get_result()
+
 
     def player_turn(self):
         """Handle player's turn in combat."""
@@ -201,7 +386,6 @@ class Combat:
                 self.state = Combat.ENEMY_TURN
 
         elif action == "run":
-            # 50% chance to escape
             if random.random() < 0.5:
                 print("You successfully fled!")
                 self.state = Combat.COMBAT_END
@@ -240,7 +424,6 @@ class Combat:
 class Game:
     """Main game controller."""
 
-    # Game states
     EXPLORING = "exploring"
     IN_COMBAT = "in_combat"
     GAME_OVER = "game_over"
@@ -256,10 +439,9 @@ class Game:
         """Initialize and start the game."""
         self.show_intro()
         self.create_player()
-        self.current_location = create_world()  # Your function from earlier
+        self.current_location = create_world()
         self.current_location.describe()
 
-        # Main game loop
         while self.game_running:
             if self.state == Game.EXPLORING:
                 self.exploration_loop()
@@ -273,25 +455,49 @@ class Game:
     def show_intro(self):
         """Display the game introduction."""
         print("\n" + "="*60)
-        print("         YOUR GAME TITLE HERE")
+        print("         MYSTIC MOUNTAIN")
         print("="*60)
-        print("\nYour epic intro text goes here...")
-        print("Set the scene! What's happening? Why is the player here?")
+        print("\nYou look down from high atop a mountain in the north, As mist surrounds you...")
+        print("Far in the Distance you see Hope! Water and sand in the distance! But before you lies great distance and foes.")
         print("\n" + "="*60)
+        print(r"""   
+                    🗾 MAP 🗾
+              
+                ⛰️  THE MOUNTAIN ⛰️
+               /  (Start Here)   \
+             west               east
+            /                       \
+🧟 ZOMBIE COLLEGE 🧟          ⚔️ THE ARENA ⚔️
+[5 Zombies]     \              [2 Giants, 1 Goblin]
+[Sunglasses       \                  |
+ spawn here]     west              below
+                   \                 |
+                    \        🐀 CYBER CELLAR 🐀
+                     \       [Ferret w/ a Warrant]
+                      \            /
+                       \         east
+                        \        /
+                     🏖️ THE BEACH 🏖️
+                      ~~ VICTORY ~~
+                    ._  .  ._  .  .
+                   '  '  '  '  '  '
+                  ~~~~~~~~~~~~~~~~~
+                    🌴  YOU WIN  🌴
+    """)
+
 
     def create_player(self):
         """Create the player character."""
-        print("\nWhat is your name, adventurer?")
+        print("\nWhat is your name, brave traveler?")
         name = input("> ")
         self.player = Player(name)
-        print(f"\nWelcome, {name}! Your adventure begins...")
+        print(f"\nWelcome, {name}alot! Your adventure begins...")
 
     def exploration_loop(self):
         """Handle player input during exploration."""
         print("\nWhat do you do? (type 'help' for commands)")
         command = input("> ").lower().strip()
 
-        # Parse the command
         parts = command.split()
         if not parts:
             return
@@ -308,7 +514,7 @@ class Game:
             direction = parts[1]
             self.move(direction)
 
-        elif action in ["north", "south", "east", "west", "up", "down"]:
+        elif action in ["north", "south", "east", "west", "up", "down", "below", "above"]:
             self.move(action)
 
         elif action in ["fight", "attack"]:
@@ -321,43 +527,74 @@ class Game:
             print("Thanks for playing!")
             self.game_running = False
 
+        elif action == "use" and len(parts) > 1:
+            item_name = " ".join(parts[1:])
+            self.player.use_item(item_name, self.current_location)
+
+        elif action == "grab" or (action == "pick" and len(parts) > 1):
+            if self.current_location.items:
+                item = self.current_location.items.pop(0)
+                self.player.pick_up(item)
+            else:
+                print("There's nothing to pick up here.")
+
         else:
             print("I don't understand that command. Type 'help' for options.")
 
     def move(self, direction):
         """Move the player in the specified direction."""
         if direction in self.current_location.connections:
-            self.current_location = self.current_location.connections[direction]
+            destination = self.current_location.connections[direction]
+            if destination.name == "The Beach":
+                has_key = any(item.name == "Sunglasses" for item in self.player.inventory)
+                if not has_key:
+                    print("The door to The Beach is locked! You need a pair of shades...")
+                    return
+                else:
+                    print("You put on your shades and head to the beach...")
+            self.current_location = destination
             self.current_location.describe()
-            # TODO: Check for automatic combat triggers?
+            if self.current_location.enemies:
+                self.initiate_combat()
         else:
             print(f"You can't go {direction} from here.")
 
     def initiate_combat(self):
         """Start combat with an enemy in the current location."""
+        if self.current_location.name == "The Beach" and not self.current_location.enemies:
+            self.state = Game.VICTORY
+            return
         if not self.current_location.enemies:
             print("There's nothing to fight here.")
             return
 
-        enemy = self.current_location.enemies[0]  # Fight first enemy
+        enemy = self.current_location.enemies[0]
         battle = Combat(self.player, enemy)
         result = battle.start()
 
         if result == "victory":
             self.current_location.enemies.remove(enemy)
-            # TODO: Check for victory condition (e.g., boss defeated)
+            if hasattr(enemy, 'loot') and enemy.loot:
+                print(f"\n{enemy.name} dropped: {enemy.loot.name}!")
+                self.player.pick_up(enemy.loot)
+            if self.current_location.name == "Zombie College" and not self.current_location.enemies:
+                key = Sunglasses()
+                self.current_location.items.append(key)
+                print(f"\nFinally the path seems so clear... A pair of glowing {key.name} is just on the ground just in front of you")
         elif result == "defeat":
             self.state = Game.GAME_OVER
 
     def show_help(self):
         """Display available commands."""
         print("\n📜 AVAILABLE COMMANDS:")
-        print("  go [direction] - Move in a direction (north, south, east, west)")
-        print("  look          - Examine your surroundings")
-        print("  fight         - Attack an enemy in this location")
-        print("  inventory     - Check your inventory")
-        print("  help          - Show this help message")
-        print("  quit          - Exit the game")
+        print("  go [direction] - Move in a direction (north, south, east, west, above, below)")
+        print("  look           - Examine your surroundings")
+        print("  fight          - Attack an enemy in this location")
+        print("  grab           - Pick up an item from the ground")
+        print("  use [item]     - Use an item from your inventory")
+        print("  inventory      - Check your inventory")
+        print("  help           - Show this help message")
+        print("  quit           - Exit the game")
 
     def show_game_over(self):
         """Display game over message."""
@@ -372,8 +609,7 @@ class Game:
         print("\n" + "="*60)
         print("                    🎉 VICTORY! 🎉")
         print("="*60)
-        print("\nCongratulations! You have completed your quest!")
-        # TODO: Add your custom victory text
+        print("\nNow Get off the screen and Go Touch Grass")
 
 
 # =============================================================================
