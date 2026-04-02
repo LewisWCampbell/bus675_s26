@@ -210,6 +210,41 @@ async def predict(
 # TODO: Add /health and /stats endpoints (Part 4)
 # ============================================================================
 # Your code here!
+@app.get("/health")
+def health():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None
+    }
+
+@app.get("/stats")
+def stats():
+    """Return processing statistics from the log file."""
+    if not LOG_PATH.exists():
+        return {"total_processed": 0, "by_classification": {}, "average_confidence": 0}
+
+    entries = []
+    with open(LOG_PATH, 'r') as f:
+        for line in f:
+            entries.append(json.loads(line))
+
+    if not entries:
+        return {"total_processed": 0, "by_classification": {}, "average_confidence": 0}
+    # Breakdown by classification
+    by_classification = {}
+    total_confidence = 0
+    for entry in entries:
+        label = entry["top_prediction"]
+        by_classification[label] = by_classification.get(label, 0) + 1
+        total_confidence += entry["confidence"]
+
+    return {
+        "total_processed": len(entries),
+        "by_classification": by_classification,
+        "average_confidence": round(total_confidence / len(entries), 2)
+    }
+
 # 
 # /health should return: {"status": "healthy", "model_loaded": true}
 #

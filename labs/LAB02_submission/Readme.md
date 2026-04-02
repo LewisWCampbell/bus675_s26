@@ -1,8 +1,8 @@
 # Lab 2 Submission README
 
 ## Student Information
-- Name: [Your Name]
-- Date: [YYYY-MM-DD]
+- Name: Lewis Campbell
+- Date: [2026-03-31]
 
 ## Deliverables Included
 - `inference_api/Dockerfile`
