@@ -12,4 +12,4 @@ Consider:
 
 ## Your Reflection Below
 
-PUT YOUR REFLECTION HERE.
+If we were to move this architecture to containers that were actually located in seperate data centers, we would of course avoid our local host problem. Instead we could point the `API_URL` variable to a real address such as `https://inference.congo-api.com`, I would then need to set up https encription, and a api authentication system so i don't leave our endpoint exposed to the public. Our Shared volume also wouldn't work so we'd likely need to move our storage system for images to something such as a GCP bucket or AWS S3 storage. The data center seperation would obviously introduce latency for each classification request, it would also be harder to monitor if something breaks in your system or an outage occurs. Horizontal scaling of the api could possibly solve this issue, or you could create some sort of "Que" function for each http request.
